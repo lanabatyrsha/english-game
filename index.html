@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Mini English Game</title>
+  <style>
+    body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 20px;
+  background: url("images/background.jpg") no-repeat center center fixed;
+  background-size: cover; /* фон растягивается на весь экран */
+}
+
+    h1 {
+      text-align: center;
+      color: #222;
+      background: rgba(255,255,255,0.7);
+      padding: 10px;
+      border-radius: 10px;
+    }
+    .task {
+      background: rgba(255, 255, 255, 0.92);
+      padding: 15px;
+      margin: 20px auto;
+      border-radius: 15px;
+      max-width: 700px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+    button {
+      margin-top: 10px;
+      padding: 8px 15px;
+      border: none;
+      background: #ff9800;
+      color: #fff;
+      font-weight: bold;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #e68900;
+    }
+    /* Task 1 */
+    .dropzone {
+      display: inline-block;
+      width: 140px;
+      height: 160px;
+      border: 2px dashed #666;
+      border-radius: 12px;
+      margin: 10px;
+      vertical-align: top;
+      text-align: center;
+      padding: 5px;
+    }
+    .dropzone img {
+      width: 100px;
+      height: 100px;
+      object-fit: contain;
+      margin-bottom: 5px;
+    }
+    .word {
+      display: inline-block;
+      padding: 8px 12px;
+      margin: 5px;
+      background: #4caf50;
+      color: white;
+      border-radius: 8px;
+      cursor: grab;
+    }
+    /* Task 4 colouring */
+    .color-item {
+      display: inline-block;
+      margin: 10px;
+      text-align: center;
+    }
+    .color-item img {
+      width: 100px;
+      height: 100px;
+      object-fit: contain;
+      border: 2px solid #ccc;
+      border-radius: 10px;
+      background: #fff;
+      padding: 5px;
+    }
+    .color-buttons button {
+      margin: 5px;
+      padding: 6px 12px;
+      border: none;
+      border-radius: 6px;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <h1>🎮 Mini English Game</h1>
+
+  <!-- Task 1 -->
+  <div class="task">
+    <h2>📝 Task 1. Match the words and pictures</h2>
+    <p>Drag each word to the correct picture:</p>
+
+    <div id="dropzones">
+      <div class="dropzone" data-word="Apple">
+        <img src="images/apple.png"><br>
+      </div>
+      <div class="dropzone" data-word="Dog">
+        <img src="images/dog.png"><br>
+      </div>
+      <div class="dropzone" data-word="Book">
+        <img src="images/book.png"><br>
+      </div>
+      <div class="dropzone" data-word="Sun">
+        <img src="images/sun.png"><br>
+      </div>
+      <div class="dropzone" data-word="School">
+        <img src="images/school.png"><br>
+      </div>
+    </div>
+
+    <div id="words">
+      <div class="word" draggable="true">Apple</div>
+      <div class="word" draggable="true">Dog</div>
+      <div class="word" draggable="true">Book</div>
+      <div class="word" draggable="true">Sun</div>
+      <div class="word" draggable="true">School</div>
+    </div>
+
+    <button onclick="checkDragMatch()">Check</button>
+    <p id="dragResult"></p>
+  </div>
+  <script>
+  const words = document.querySelectorAll(".word");
+  const dropzones = document.querySelectorAll(".dropzone");
+
+  // когда начинаем перетаскивать слово
+  words.forEach(word => {
+    word.addEventListener("dragstart", e => {
+      e.dataTransfer.setData("text", word.textContent);
+    });
+  });
+
+  // разрешаем сброс
+  dropzones.forEach(zone => {
+    zone.addEventListener("dragover", e => e.preventDefault());
+
+    zone.addEventListener("drop", e => {
+      e.preventDefault();
+      const droppedWord = e.dataTransfer.getData("text");
+
+      // очищаем старое слово внутри зоны
+      if (zone.querySelector(".dropped")) {
+        zone.querySelector(".dropped").remove();
+      }
+
+      // вставляем новое слово
+      const span = document.createElement("div");
+      span.textContent = droppedWord;
+      span.className = "dropped";
+      zone.appendChild(span);
+    });
+  });
+
+  // кнопка проверки
+  function checkDragMatch() {
+    let correct = 0;
+    dropzones.forEach(zone => {
+      const word = zone.querySelector(".dropped");
+      if (word && word.textContent === zone.dataset.word) {
+        zone.style.borderColor = "green";
+        correct++;
+      } else {
+        zone.style.borderColor = "red";
+      }
+    });
+    document.getElementById("dragResult").textContent =
+      `✅ Correct: ${correct}/${dropzones.length}`;
+  }
+</script>
+
+
+  <!-- 📝 Task 2 -->
+<div class="task">
+  <h2>📝 Task 2. Match English and Kazakh (Connect game)</h2>
+  <p> Translate the words into Kazakh</p>
+  <div id="connect-game">
+    <div class="connect-column" id="english-col"></div>
+    <canvas id="connect-canvas"></canvas>
+    <div class="connect-column" id="kazakh-col"></div>
+  </div>
+  <p id="connectResult"></p>
+</div>
+
+<style>
+  #connect-game {
+    display: flex;
+    justify-content: space-between;
+    gap: 50px;
+    margin-top: 15px;
+    position: relative;
+  }
+  .connect-column {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .connect-item {
+    padding: 8px 12px;
+    border: 2px solid #333;
+    border-radius: 8px;
+    background: #fce4ec;
+    cursor: pointer;
+    position: relative;
+    z-index: 1;
+  }
+  #connect-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    pointer-events: none;
+    z-index: 0;
+  }
+</style>
+
+<script>
+  // --- Task 2: Connect game ---
+  const connectPairs = {
+    "Mother": "Ана",
+    "Teacher": "Мұғалім",
+    "Water": "Су",
+    "Cat": "Мысық",
+    "Table": "Үстел"
+  };
+
+  const englishCol = document.getElementById("english-col");
+  const kazakhCol = document.getElementById("kazakh-col");
+  const canvas = document.getElementById("connect-canvas");
+  const ctx = canvas.getContext("2d");
+
+  canvas.width = document.getElementById("connect-game").offsetWidth;
+  canvas.height = document.getElementById("connect-game").offsetHeight;
+
+  function createItems() {
+    // English words
+    Object.keys(connectPairs).forEach(word => {
+      const engDiv = document.createElement("div");
+      engDiv.className = "connect-item";
+      engDiv.textContent = word;
+      engDiv.dataset.word = word;
+      englishCol.appendChild(engDiv);
+    });
+
+    // Kazakh words (shuffled)
+    const shuffledKazakh = Object.values(connectPairs).sort(() => Math.random() - 0.5);
+    shuffledKazakh.forEach(word => {
+      const kzDiv = document.createElement("div");
+      kzDiv.className = "connect-item";
+      kzDiv.textContent = word;
+      kzDiv.dataset.word = word;
+      kazakhCol.appendChild(kzDiv);
+    });
+  }
+
+  let firstSelected = null;
+  let connections = [];
+
+  function getCenter(el) {
+    const rect = el.getBoundingClientRect();
+    const parentRect = document.getElementById("connect-game").getBoundingClientRect();
+    return {
+      x: rect.left - parentRect.left + rect.width,
+      y: rect.top - parentRect.top + rect.height / 2
+    };
+  }
+
+  function getCenterRight(el) {
+    const rect = el.getBoundingClientRect();
+    const parentRect = document.getElementById("connect-game").getBoundingClientRect();
+    return {
+      x: rect.left - parentRect.left,
+      y: rect.top - parentRect.top + rect.height / 2
+    };
+  }
+
+  function redraw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    connections.forEach(c => {
+      ctx.beginPath();
+      ctx.moveTo(c.start.x, c.start.y);
+      ctx.lineTo(c.end.x, c.end.y);
+      ctx.strokeStyle = c.correct ? "green" : "red";
+      ctx.lineWidth = 3;
+      ctx.stroke();
+    });
+  }
+
+  document.getElementById("connect-game").addEventListener("click", e => {
+    if (!e.target.classList.contains("connect-item")) return;
+    if (!firstSelected) {
+      firstSelected = e.target;
+      e.target.style.background = "#fff59d";
+    } else {
+      const secondSelected = e.target;
+      if (firstSelected.parentElement === secondSelected.parentElement) {
+        firstSelected.style.background = "#fce4ec";
+        firstSelected = null;
+        return;
+      }
+      const eng = firstSelected.parentElement.id === "english-col" ? firstSelected : secondSelected;
+      const kz = eng === firstSelected ? secondSelected : firstSelected;
+
+      const isCorrect = connectPairs[eng.dataset.word] === kz.dataset.word;
+
+      connections.push({
+        start: getCenter(eng),
+        end: getCenterRight(kz),
+        correct: isCorrect
+      });
+
+      eng.style.background = isCorrect ? "#c8e6c9" : "#ffcdd2";
+      kz.style.background = isCorrect ? "#c8e6c9" : "#ffcdd2";
+
+      redraw();
+      firstSelected = null;
+    }
+  });
+
+  createItems();
+</script>
+
+
+<!-- 📝 Task 3 -->
+<div class="task">
+  <h2>📝 Task 3. Write the missing letter</h2>
+  <div id="task3"></div>
+  <p id="task3Result"></p>
+</div>
+
+<style>
+  .task3-word {
+    font-size: 22px;
+    margin-bottom: 12px;
+  }
+  .option-btn {
+    margin: 5px;
+    padding: 8px 14px;
+    border: 2px solid #333;
+    border-radius: 8px;
+    background: #bbdefb; /* более яркий фон */
+    cursor: pointer;
+    font-size: 16px;
+    color: #000;
+  }
+  .option-btn.correct {
+    background: #4caf50; /* зелёный */
+    color: #fff;
+  }
+  .option-btn.wrong {
+    background: #f44336; /* красный */
+    color: #fff;
+  }
+</style>
+
+<script>
+  // --- Task 3: Missing letter (one letter only) ---
+  const task3Data = [
+    { word: "B_ok", correct: "o", options: ["a", "o", "e"] }, // Book
+    { word: "C_t", correct: "a", options: ["a", "o", "u"] },   // Cat
+    { word: "S_n", correct: "u", options: ["u", "a", "i"] },   // Sun
+    { word: "Appl_", correct: "e", options: ["e", "a", "o"] }, // Apple
+    { word: "Sch_ol", correct: "o", options: ["o", "a", "e"] } // School
+  ];
+
+  const task3Container = document.getElementById("task3");
+  let score3 = 0;
+
+  task3Data.forEach((item, index) => {
+    const div = document.createElement("div");
+    div.className = "task3-word";
+    div.innerHTML = `<strong>${index + 1}. ${item.word}</strong> `;
+
+    item.options.forEach(opt => {
+      const btn = document.createElement("button");
+      btn.className = "option-btn";
+      btn.textContent = opt;
+      btn.onclick = () => {
+        if (opt === item.correct) {
+          btn.classList.add("correct");
+          score3++;
+          // вставляем букву в слово
+          div.innerHTML = `<strong>${index + 1}. ${item.word.replace("_", opt)}</strong>`;
+        } else {
+          btn.classList.add("wrong");
+        }
+        // отключаем все кнопки
+        div.querySelectorAll("button").forEach(b => (b.disabled = true));
+        document.getElementById("task3Result").textContent =
+          `✅ Correct answers: ${score3}/${task3Data.length}`;
+      };
+      div.appendChild(btn);
+    });
+
+    task3Container.appendChild(div);
+  });
+</script>
+
+<!-- 📝 Task 4 -->
+<div class="task">
+  <h2>📝 Task 4. Choose the correct color</h2>
+  <p>Click the right color for each picture:</p>
+
+  <div class="color-grid">
+    <div class="color-item" data-answer="yellow">
+      <img src="images/star.png" alt="Star"><br>
+      <div class="color-buttons">
+        <button style="background:gold" value="yellow">Yellow</button>
+        <button style="background:orange" value="orange">Orange</button>
+        <button style="background:green" value="green">Green</button>
+        <button style="background:red" value="red">Red</button>
+      </div>
+    </div>
+
+    <div class="color-item" data-answer="yellow">
+      <img src="images/banana.png" alt="Banana"><br>
+      <div class="color-buttons">
+        <button style="background:gold" value="yellow">Yellow</button>
+        <button style="background:orange" value="orange">Orange</button>
+        <button style="background:green" value="green">Green</button>
+        <button style="background:red" value="red">Red</button>
+      </div>
+    </div>
+
+    <div class="color-item" data-answer="orange">
+      <img src="images/carrot.png" alt="Carrot"><br>
+      <div class="color-buttons">
+        <button style="background:gold" value="yellow">Yellow</button>
+        <button style="background:orange" value="orange">Orange</button>
+        <button style="background:green" value="green">Green</button>
+        <button style="background:red" value="red">Red</button>
+      </div>
+    </div>
+
+    <div class="color-item" data-answer="green">
+      <img src="images/leaf.png" alt="Leaf"><br>
+      <div class="color-buttons">
+        <button style="background:gold" value="yellow">Yellow</button>
+        <button style="background:orange" value="orange">Orange</button>
+        <button style="background:green" value="green">Green</button>
+        <button style="background:red" value="red">Red</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.querySelectorAll(".color-item").forEach(item => {
+    const correct = item.dataset.answer;
+    const buttons = item.querySelectorAll("button");
+
+    buttons.forEach(btn => {
+      btn.addEventListener("click", () => {
+        buttons.forEach(b => b.classList.remove("correct", "wrong"));
+
+        if (btn.value === correct) {
+          btn.classList.add("correct");
+          item.style.border = "3px solid green";
+        } else {
+          btn.classList.add("wrong");
+          item.style.border = "3px solid red";
+        }
+      });
+    });
+  });
+</script>
+
+<style>
+  .color-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr); /* 2 колонки */
+    gap: 20px;
+    justify-items: center;
+  }
+  .color-item {
+    width: 200px;
+    padding: 15px;
+    border: 2px solid #ccc;
+    border-radius: 12px;
+    background: #fff;
+    text-align: center;
+  }
+  .color-item img {
+    width: 100px;
+    height: 100px;
+    object-fit: contain;
+    margin-bottom: 8px;
+  }
+  .color-buttons button {
+    margin: 5px;
+    padding: 6px 12px;
+    border: none;
+    border-radius: 6px;
+    color: #fff;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  .color-buttons button.correct {
+    box-shadow: 0 0 8px 2px #4caf50;
+  }
+  .color-buttons button.wrong {
+    box-shadow: 0 0 8px 2px #f44336;
+  }
+</style>
+
+
+</body>
+</html>
